@@ -1,8 +1,9 @@
 # secrets and local config
 .env
 
-# session notes, not part of the deliverable
+# local notes and reference files, not part of the project
 notes/
+docs/
 
 # python
 __pycache__/
