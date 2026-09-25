@@ -1,0 +1,22 @@
+# secrets and local config
+.env
+
+# session notes, not part of the deliverable
+notes/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.db
+
+# node
+node_modules/
+dist/
+
+# editors and os
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
