@@ -21,6 +21,7 @@ def test_returns_application_with_candidate_and_job(client):
         "status": "in_review",
         "status_updated_at": "2026-03-03T09:00:00",
         "note": None,
+        "llm_scores": [],
         "candidate": {
             "candidate_id": "C2",
             "full_name": "Ben Bauer",

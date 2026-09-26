@@ -23,6 +23,37 @@ class ApplicationFilters(BaseModel):
     page_size: int = Field(20, ge=1, le=100, description="Rows per page, max 100.")
 
 
+class LlmProviderId(StrEnum):
+    MOCK = "mock"
+    CLAUDE = "claude"
+
+
+class LlmProvider(BaseModel):
+    id: LlmProviderId
+    label: str
+    model: str
+
+
+class LlmScoreRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    provider: LlmProviderId = Field(description="Which scorer to use.")
+
+
+class ApplicationLlmScore(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    provider: LlmProviderId
+    model: str
+    score: int
+    reason: str
+    scored_at: datetime
+
+
+class LlmScoreResponse(ApplicationLlmScore):
+    cached: bool = Field(description="True when the stored score was reused and no model was called.")
+
+
 class ApplicationUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -76,6 +107,7 @@ class ApplicationListItem(BaseModel):
 
 class ApplicationDetail(ApplicationListItem):
     note: str | None
+    llm_scores: list[ApplicationLlmScore]
 
 
 class ApplicationPage(BaseModel):

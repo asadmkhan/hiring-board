@@ -1,5 +1,5 @@
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session, contains_eager, joinedload
+from sqlalchemy.orm import Session, contains_eager, joinedload, selectinload
 
 from app.models import Application, Job
 from app.schemas import ApplicationFilters
@@ -39,6 +39,10 @@ def get_application(session: Session, application_id: str) -> Application | None
     stmt = (
         select(Application)
         .where(Application.application_id == application_id)
-        .options(joinedload(Application.job), joinedload(Application.candidate))
+        .options(
+            joinedload(Application.job),
+            joinedload(Application.candidate),
+            selectinload(Application.llm_scores),
+        )
     )
     return session.scalar(stmt)

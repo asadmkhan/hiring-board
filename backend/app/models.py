@@ -47,6 +47,7 @@ class Application(Base):
 
     job: Mapped[Job] = relationship()
     candidate: Mapped[Candidate] = relationship()
+    llm_scores: Mapped[list["LlmScore"]] = relationship(order_by="LlmScore.scored_at")
 
 
 class LlmScore(Base):
