@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import ForeignKey, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
 
@@ -44,6 +44,9 @@ class Application(Base):
     status: Mapped[str] = mapped_column(index=True)
     status_updated_at: Mapped[datetime | None]
     note: Mapped[str | None]
+
+    job: Mapped[Job] = relationship()
+    candidate: Mapped[Candidate] = relationship()
 
 
 class LlmScore(Base):
