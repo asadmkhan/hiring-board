@@ -28,6 +28,11 @@ class ApplicationCandidate(BaseModel):
 
     candidate_id: str
     full_name: str
+    email: str
+    country: str
+    city: str
+    years_experience: int
+    preferred_job_family: str
 
 
 class ApplicationJob(BaseModel):
@@ -36,8 +41,10 @@ class ApplicationJob(BaseModel):
     job_id: str
     title: str
     job_family: str
+    seniority: str
     country: str
     city: str
+    created_at: datetime
 
 
 class ApplicationListItem(BaseModel):
@@ -52,6 +59,10 @@ class ApplicationListItem(BaseModel):
     status_updated_at: datetime | None
     candidate: ApplicationCandidate
     job: ApplicationJob
+
+
+class ApplicationDetail(ApplicationListItem):
+    note: str | None
 
 
 class ApplicationPage(BaseModel):

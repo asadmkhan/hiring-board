@@ -1,5 +1,5 @@
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session, contains_eager
+from sqlalchemy.orm import Session, contains_eager, joinedload
 
 from app.models import Application, Job
 from app.schemas import ApplicationFilters
@@ -33,3 +33,12 @@ def list_applications(session: Session, filters: ApplicationFilters) -> tuple[li
         .limit(filters.page_size)
     )
     return list(session.scalars(stmt)), total
+
+
+def get_application(session: Session, application_id: str) -> Application | None:
+    stmt = (
+        select(Application)
+        .where(Application.application_id == application_id)
+        .options(joinedload(Application.job), joinedload(Application.candidate))
+    )
+    return session.scalar(stmt)

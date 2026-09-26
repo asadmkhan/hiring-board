@@ -1,11 +1,11 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app import queries
 from app.db import get_session
-from app.schemas import ApplicationFilters, ApplicationPage
+from app.schemas import ApplicationDetail, ApplicationFilters, ApplicationPage
 
 router = APIRouter(prefix="/applications", tags=["applications"])
 
@@ -17,3 +17,11 @@ def list_applications(
 ):
     rows, total = queries.list_applications(session, filters)
     return ApplicationPage(items=rows, total=total, page=filters.page, page_size=filters.page_size)
+
+
+@router.get("/{application_id}", response_model=ApplicationDetail)
+def get_application(application_id: str, session: Annotated[Session, Depends(get_session)]):
+    application = queries.get_application(session, application_id)
+    if application is None:
+        raise HTTPException(status_code=404, detail="Application not found")
+    return application
