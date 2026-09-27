@@ -12,6 +12,7 @@ class Settings(BaseSettings):
 
     # Scoring providers.
     anthropic_api_key: SecretStr = SecretStr("")
+    claude_model: str = "claude-haiku-4-5"
     openai_api_key: SecretStr = SecretStr("")
     ollama_url: str = "http://localhost:11434"
 

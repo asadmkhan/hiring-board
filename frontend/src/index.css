@@ -31,3 +31,18 @@ th {
 button {
   font: inherit;
 }
+
+.filters,
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin: 12px 0;
+}
+
+.filters label {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}

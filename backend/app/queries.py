@@ -1,7 +1,9 @@
+from collections.abc import Sequence
+
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, contains_eager, joinedload, selectinload
 
-from app.models import Application, Job
+from app.models import Application, Job, LlmScore
 from app.schemas import ApplicationFilters
 
 SORT_COLUMNS = {
@@ -10,7 +12,9 @@ SORT_COLUMNS = {
 }
 
 
-def list_applications(session: Session, filters: ApplicationFilters) -> tuple[list[Application], int]:
+def list_applications(
+    session: Session, filters: ApplicationFilters
+) -> tuple[list[Application], int]:
     stmt = select(Application).join(Application.job).join(Application.candidate)
     if filters.status:
         stmt = stmt.where(Application.status == filters.status)
@@ -27,7 +31,9 @@ def list_applications(session: Session, filters: ApplicationFilters) -> tuple[li
         order_by = [column.desc() for column in order_by]
 
     stmt = (
-        stmt.options(contains_eager(Application.job), contains_eager(Application.candidate))
+        stmt.options(
+            contains_eager(Application.job), contains_eager(Application.candidate)
+        )
         .order_by(*order_by)
         .offset((filters.page - 1) * filters.page_size)
         .limit(filters.page_size)
@@ -44,5 +50,24 @@ def get_application(session: Session, application_id: str) -> Application | None
             joinedload(Application.candidate),
             selectinload(Application.llm_scores),
         )
+    )
+    return session.scalar(stmt)
+
+
+def distinct_job_values(session: Session) -> tuple[Sequence[str], Sequence[str]]:
+    countries = session.scalars(
+        select(Job.country).distinct().order_by(Job.country)
+    ).all()
+    families = session.scalars(
+        select(Job.job_family).distinct().order_by(Job.job_family)
+    ).all()
+    return countries, families
+
+
+def get_llm_score(
+    session: Session, application_id: str, provider: str
+) -> LlmScore | None:
+    stmt = select(LlmScore).where(
+        LlmScore.application_id == application_id, LlmScore.provider == provider
     )
     return session.scalar(stmt)

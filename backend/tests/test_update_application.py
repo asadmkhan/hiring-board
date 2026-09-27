@@ -2,12 +2,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from tests.seed import seed_data
-
-
-@pytest.fixture(autouse=True)
-def seed(session):
-    seed_data(session)
+pytestmark = pytest.mark.usefixtures("seeded")
 
 
 def test_status_change_sets_date_and_is_saved(client):
@@ -38,11 +33,21 @@ def test_note_only_leaves_status_and_date(client):
 
 
 def test_status_and_note_together(client):
-    body = client.patch("/applications/A1", json={"status": "rejected", "note": "No forklift licence"}).json()
+    body = client.patch(
+        "/applications/A1", json={"status": "rejected", "note": "No forklift licence"}
+    ).json()
 
     assert body["status"] == "rejected"
     assert body["note"] == "No forklift licence"
     assert body["status_updated_at"] is not None
+
+
+def test_blank_note_is_stored_as_no_note(client):
+    client.patch("/applications/A1", json={"note": "temp"})
+
+    body = client.patch("/applications/A1", json={"note": "   "}).json()
+
+    assert body["note"] is None
 
 
 def test_null_note_clears_it(client):
@@ -55,7 +60,7 @@ def test_null_note_clears_it(client):
 
 @pytest.mark.parametrize(
     "payload",
-    [{"status": "maybe"}, {}, {"staus": "new"}, {"note": "x" * 501}],
+    [{"status": "maybe"}, {"status": None}, {}, {"staus": "new"}, {"note": "x" * 501}],
 )
 def test_bad_body_is_rejected(client, payload):
     assert client.patch("/applications/A1", json=payload).status_code == 422

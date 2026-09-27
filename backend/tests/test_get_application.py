@@ -1,11 +1,6 @@
 import pytest
 
-from tests.seed import seed_data
-
-
-@pytest.fixture(autouse=True)
-def seed(session):
-    seed_data(session)
+pytestmark = pytest.mark.usefixtures("seeded")
 
 
 def test_returns_application_with_candidate_and_job(client):

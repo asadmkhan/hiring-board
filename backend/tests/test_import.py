@@ -38,8 +38,12 @@ def test_new_applications_have_no_status_date(sqlite_engine):
     load_csvs(sqlite_engine)
 
     with Session(sqlite_engine) as session:
-        new_rows = session.scalars(select(Application).where(Application.status == "new")).all()
-        other_rows = session.scalars(select(Application).where(Application.status != "new")).all()
+        new_rows = session.scalars(
+            select(Application).where(Application.status == "new")
+        ).all()
+        other_rows = session.scalars(
+            select(Application).where(Application.status != "new")
+        ).all()
 
     assert len(new_rows) == 286
     assert all(row.status_updated_at is None for row in new_rows)

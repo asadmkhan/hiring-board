@@ -3,7 +3,8 @@ import pytest
 from app.main import app
 from app.scoring.base import ScoreResult, ScoringError
 from app.scoring.registry import available_scorers
-from tests.seed import seed_data
+
+pytestmark = pytest.mark.usefixtures("seeded")
 
 
 class CountingScorer:
@@ -26,11 +27,6 @@ class FailingScorer:
 
     def score(self, job, candidate):
         raise ScoringError("Claude is down")
-
-
-@pytest.fixture(autouse=True)
-def seed(session):
-    seed_data(session)
 
 
 @pytest.fixture
@@ -86,7 +82,9 @@ def test_failed_provider_gives_502_and_stores_nothing(client, scorers):
 def test_provider_without_config_gives_502(client):
     app.dependency_overrides[available_scorers] = lambda: {"mock": CountingScorer()}
     try:
-        response = client.post("/applications/A1/llm-score", json={"provider": "claude"})
+        response = client.post(
+            "/applications/A1/llm-score", json={"provider": "claude"}
+        )
     finally:
         app.dependency_overrides.pop(available_scorers, None)
 
@@ -94,7 +92,34 @@ def test_provider_without_config_gives_502(client):
     assert response.json() == {"detail": "claude is not configured on this server"}
 
 
-@pytest.mark.parametrize("payload", [{"provider": "gpt9"}, {}, {"provider": "mock", "extra": 1}])
+def test_stored_score_is_returned_even_when_the_provider_is_gone(client, scorers):
+    client.post("/applications/A1/llm-score", json={"provider": "mock"})
+    app.dependency_overrides[available_scorers] = lambda: {}
+    try:
+        response = client.post("/applications/A1/llm-score", json={"provider": "mock"})
+    finally:
+        app.dependency_overrides.pop(available_scorers, None)
+
+    assert response.status_code == 200
+    assert response.json()["cached"] is True
+
+
+def test_each_provider_gets_its_own_row(client, scorers):
+    scorers["claude"] = CountingScorer()
+    scorers["claude"].provider = "claude"
+
+    client.post("/applications/A1/llm-score", json={"provider": "mock"})
+    client.post("/applications/A1/llm-score", json={"provider": "claude"})
+
+    providers = [
+        row["provider"] for row in client.get("/applications/A1").json()["llm_scores"]
+    ]
+    assert sorted(providers) == ["claude", "mock"]
+
+
+@pytest.mark.parametrize(
+    "payload", [{"provider": "gpt9"}, {}, {"provider": "mock", "extra": 1}]
+)
 def test_bad_body_is_rejected(client, scorers, payload):
     assert client.post("/applications/A1/llm-score", json=payload).status_code == 422
 

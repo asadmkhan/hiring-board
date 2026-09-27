@@ -1,26 +1,34 @@
 from datetime import datetime
 
-from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app import queries
 from app.models import Application, LlmScore
 from app.scoring.base import Scorer, ScoringError
 
 
-def score_application(session: Session, application: Application, scorer: Scorer) -> tuple[LlmScore, bool]:
+def score_application(
+    session: Session, application: Application, provider: str, scorer: Scorer | None
+) -> tuple[LlmScore, bool]:
     """Return the stored score for this provider, or call the model once and store the result.
 
     The second value says whether the score came from the store.
     """
-    existing = _stored_score(session, application, scorer.provider)
+    existing = queries.get_llm_score(session, application.application_id, provider)
     if existing is not None:
         return existing, True
+    if scorer is None:
+        raise ScoringError(f"{provider} is not configured on this server")
 
-    result = scorer.score(application.job, application.candidate)
+    job, candidate = application.job, application.candidate
+    # Let go of the database transaction while the model call runs.
+    session.rollback()
+    result = scorer.score(job, candidate)
+
     row = LlmScore(
         application_id=application.application_id,
-        provider=scorer.provider,
+        provider=provider,
         model=scorer.model,
         score=result.score,
         reason=result.reason,
@@ -32,16 +40,8 @@ def score_application(session: Session, application: Application, scorer: Scorer
     except IntegrityError as e:
         # Two clicks raced and the other one won. Hand back what it stored.
         session.rollback()
-        winner = _stored_score(session, application, scorer.provider)
+        winner = queries.get_llm_score(session, application.application_id, provider)
         if winner is None:
             raise ScoringError("The score could not be stored. Try again.") from e
         return winner, True
     return row, False
-
-
-def _stored_score(session: Session, application: Application, provider: str) -> LlmScore | None:
-    stmt = select(LlmScore).where(
-        LlmScore.application_id == application.application_id,
-        LlmScore.provider == provider,
-    )
-    return session.scalar(stmt)

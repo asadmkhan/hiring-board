@@ -11,11 +11,11 @@ from app.scoring.mock import MockScorer
 
 @lru_cache
 def available_scorers() -> dict[str, Scorer]:
-    scorers: dict[str, Scorer] = {"mock": MockScorer()}
+    scorers: list[Scorer] = [MockScorer()]
     claude_key = settings.anthropic_api_key.get_secret_value()
     if claude_key:
-        scorers["claude"] = ClaudeScorer(claude_key)
-    return scorers
+        scorers.append(ClaudeScorer(claude_key, settings.claude_model))
+    return {scorer.provider: scorer for scorer in scorers}
 
 
 ScorersDep = Annotated[dict[str, Scorer], Depends(available_scorers)]

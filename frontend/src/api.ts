@@ -1,4 +1,4 @@
-import type { ApplicationPage } from './types'
+import type { ApplicationFilters, ApplicationPage, FilterOptions, SortKey } from './types'
 
 const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000').replace(/\/$/, '')
 
@@ -22,7 +22,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     throw new ApiError(await errorMessage(response), response.status)
   }
-  return (await response.json()) as T
+  try {
+    return (await response.json()) as T
+  } catch {
+    throw new ApiError('The server sent an unreadable response.', response.status)
+  }
 }
 
 // FastAPI puts a string in `detail` for our own errors and a list for validation errors.
@@ -37,6 +41,27 @@ async function errorMessage(response: Response): Promise<string> {
   return `Request failed (${response.status})`
 }
 
-export function listApplications(page = 1, pageSize = 20): Promise<ApplicationPage> {
-  return request(`/applications?page=${page}&page_size=${pageSize}`)
+const PAGE_SIZE = 20
+
+const SORT_PARAMS: Record<SortKey, { sort: string; order: string }> = {
+  newest: { sort: 'created_at', order: 'desc' },
+  oldest: { sort: 'created_at', order: 'asc' },
+  highest_score: { sort: 'match_score', order: 'desc' },
+  lowest_score: { sort: 'match_score', order: 'asc' },
+}
+
+export function listApplications(filters: ApplicationFilters): Promise<ApplicationPage> {
+  const params = new URLSearchParams({
+    ...SORT_PARAMS[filters.sort],
+    page: String(filters.page),
+    page_size: String(PAGE_SIZE),
+  })
+  if (filters.status) params.set('status', filters.status)
+  if (filters.country) params.set('country', filters.country)
+  if (filters.job_family) params.set('job_family', filters.job_family)
+  return request(`/applications?${params}`)
+}
+
+export function getFilterOptions(): Promise<FilterOptions> {
+  return request('/filter-options')
 }

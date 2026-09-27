@@ -38,3 +38,19 @@ export interface ApplicationPage {
   page: number
   page_size: number
 }
+
+export type SortKey = 'newest' | 'oldest' | 'highest_score' | 'lowest_score'
+
+// Empty string means "all" for the three filters.
+export interface ApplicationFilters {
+  status: ApplicationStatus | ''
+  country: string
+  job_family: string
+  sort: SortKey
+  page: number
+}
+
+export interface FilterOptions {
+  countries: string[]
+  job_families: string[]
+}

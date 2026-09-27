@@ -6,7 +6,9 @@ from app.models import Application
 from app.schemas import ApplicationUpdate
 
 
-def update_application(session: Session, application: Application, update: ApplicationUpdate) -> Application:
+def update_application(
+    session: Session, application: Application, update: ApplicationUpdate
+) -> Application:
     if update.status is not None and update.status != application.status:
         application.status = update.status.value
         application.status_updated_at = datetime.now().replace(microsecond=0)

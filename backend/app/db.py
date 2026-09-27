@@ -1,5 +1,8 @@
+from typing import Annotated
+
+from fastapi import Depends
 from sqlalchemy import create_engine
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.config import settings
 
@@ -14,3 +17,6 @@ class Base(DeclarativeBase):
 def get_session():
     with SessionLocal() as session:
         yield session
+
+
+SessionDep = Annotated[Session, Depends(get_session)]

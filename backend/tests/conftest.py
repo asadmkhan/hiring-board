@@ -6,6 +6,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.db import Base, get_session
 from app.main import app
+from tests.seed import seed_data
 
 
 @pytest.fixture
@@ -33,3 +34,8 @@ def client(session):
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def seeded(session):
+    seed_data(session)

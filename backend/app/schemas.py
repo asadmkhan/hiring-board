@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class ApplicationStatus(StrEnum):
@@ -15,9 +15,15 @@ class ApplicationStatus(StrEnum):
 
 class ApplicationFilters(BaseModel):
     status: ApplicationStatus | None = Field(None, description="Application status.")
-    country: str | None = Field(None, description="Job country, DE or AT.")
-    job_family: str | None = Field(None, description="Job family, for example Logistics.")
-    sort: Literal["created_at", "match_score"] = Field("created_at", description="Sort field.")
+    country: str | None = Field(
+        None, description="Job country code, see /filter-options."
+    )
+    job_family: str | None = Field(
+        None, description="Job family, for example Logistics."
+    )
+    sort: Literal["created_at", "match_score"] = Field(
+        "created_at", description="Sort field."
+    )
     order: Literal["asc", "desc"] = Field("desc", description="Sort direction.")
     page: int = Field(1, ge=1, description="Page number, starts at 1.")
     page_size: int = Field(20, ge=1, le=100, description="Rows per page, max 100.")
@@ -51,19 +57,32 @@ class ApplicationLlmScore(BaseModel):
 
 
 class LlmScoreResponse(ApplicationLlmScore):
-    cached: bool = Field(description="True when the stored score was reused and no model was called.")
+    cached: bool = Field(
+        description="True when the stored score was reused and no model was called."
+    )
 
 
 class ApplicationUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     status: ApplicationStatus | None = Field(None, description="New status.")
-    note: str | None = Field(None, max_length=500, description="Short recruiter note. Null clears it.")
+    note: str | None = Field(
+        None, max_length=500, description="Short recruiter note. Null clears it."
+    )
+
+    @field_validator("note")
+    @classmethod
+    def blank_note_means_no_note(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return value.strip() or None
 
     @model_validator(mode="after")
     def needs_at_least_one_field(self):
         if not self.model_fields_set:
             raise ValueError("Send a status, a note, or both.")
+        if "status" in self.model_fields_set and self.status is None:
+            raise ValueError("Status cannot be null.")
         return self
 
 
@@ -115,3 +134,8 @@ class ApplicationPage(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class FilterOptions(BaseModel):
+    countries: list[str]
+    job_families: list[str]

@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import anthropic
 import httpx2
 import pytest
+from pydantic import ValidationError
 
 from app.scoring.base import ScoringError
 from app.scoring.claude import ClaudeAnswer, ClaudeScorer
@@ -36,6 +37,16 @@ def test_mock_is_deterministic_and_in_range():
     assert scorer.score(JOB, BEN).score < first.score
 
 
+def test_mock_skips_the_experience_bonus_for_an_unknown_seniority():
+    lead_job = jobs()[0]
+    lead_job.seniority = "lead"
+
+    result = MockScorer().score(lead_job, ANNA)
+
+    assert result.score == 85
+    assert "experience" not in result.reason
+
+
 class FakeMessages:
     def __init__(self, answer=None, error=None):
         self.answer = answer
@@ -53,30 +64,73 @@ def fake_client(**kwargs):
     return SimpleNamespace(messages=FakeMessages(**kwargs))
 
 
-def test_claude_scorer_uses_haiku_and_returns_the_parsed_answer():
-    client = fake_client(answer=ClaudeAnswer(score=82, reason=" Good fit. "))
-    scorer = ClaudeScorer(api_key="test", client=client)
+def claude_with(**kwargs) -> ClaudeScorer:
+    return ClaudeScorer(
+        api_key="test", model="claude-haiku-4-5", client=fake_client(**kwargs)
+    )
+
+
+def test_claude_scorer_uses_the_configured_model_and_returns_the_parsed_answer():
+    scorer = claude_with(answer=ClaudeAnswer(score=82, reason=" Good fit. "))
 
     result = scorer.score(JOB, ANNA)
 
     assert result.score == 82
     assert result.reason == "Good fit."
-    sent = client.messages.kwargs
+    sent = scorer.client.messages.kwargs
     assert sent["model"] == "claude-haiku-4-5"
     assert sent["output_format"] is ClaudeAnswer
     assert "Anna" not in sent["messages"][0]["content"]
 
 
-def test_claude_scorer_rejects_a_score_out_of_range():
-    client = fake_client(answer=ClaudeAnswer(score=140, reason="Too good."))
+def test_claude_client_has_a_timeout_and_one_retry():
+    scorer = ClaudeScorer(api_key="test", model="claude-haiku-4-5")
 
+    assert scorer.client.timeout == 20.0
+    assert scorer.client.max_retries == 1
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        ClaudeAnswer(score=140, reason="Too good."),
+        ClaudeAnswer(score=-1, reason="Below zero."),
+        ClaudeAnswer(score=60, reason="   "),
+        None,
+    ],
+)
+def test_claude_scorer_rejects_a_bad_answer(answer):
     with pytest.raises(ScoringError, match="invalid answer"):
-        ClaudeScorer(api_key="test", client=client).score(JOB, ANNA)
+        claude_with(answer=answer).score(JOB, ANNA)
 
 
-def test_claude_scorer_turns_sdk_errors_into_scoring_errors():
-    request = httpx2.Request("POST", "https://api.anthropic.com/v1/messages")
-    client = fake_client(error=anthropic.APIConnectionError(request=request))
+def request():
+    return httpx2.Request("POST", "https://api.anthropic.com/v1/messages")
 
-    with pytest.raises(ScoringError, match="Could not reach Claude"):
-        ClaudeScorer(api_key="test", client=client).score(JOB, ANNA)
+
+def status_error(cls, status):
+    response = httpx2.Response(status, request=request())
+    return cls("boom", response=response, body=None)
+
+
+def validation_error():
+    try:
+        ClaudeAnswer.model_validate({"score": "not a number", "reason": 1})
+    except ValidationError as e:
+        return e
+    raise AssertionError("expected a validation error")
+
+
+@pytest.mark.parametrize(
+    ("error", "message"),
+    [
+        (anthropic.APIConnectionError(request=request()), "Could not reach Claude"),
+        (status_error(anthropic.AuthenticationError, 401), "rejected the API key"),
+        (status_error(anthropic.RateLimitError, 429), "returned an error \\(429\\)"),
+        (validation_error(), "invalid answer"),
+        (anthropic.AnthropicError("something else"), "invalid answer"),
+    ],
+)
+def test_claude_scorer_turns_every_failure_into_a_scoring_error(error, message):
+    with pytest.raises(ScoringError, match=message):
+        claude_with(error=error).score(JOB, ANNA)

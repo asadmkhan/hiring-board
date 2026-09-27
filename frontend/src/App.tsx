@@ -1,4 +1,4 @@
-import ApplicationList from './ApplicationList'
+import ApplicationList from './components/ApplicationList'
 
 export default function App() {
   return (

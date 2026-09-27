@@ -32,11 +32,13 @@ class Candidate(Base):
 
 class Application(Base):
     __tablename__ = "applications"
+    # No unique key on job + candidate. The same candidate can apply to the same job more than once.
 
-    # Same candidate can apply to the same job more than once.
     application_id: Mapped[str] = mapped_column(primary_key=True)
     job_id: Mapped[str] = mapped_column(ForeignKey("jobs.job_id"), index=True)
-    candidate_id: Mapped[str] = mapped_column(ForeignKey("candidates.candidate_id"), index=True)
+    candidate_id: Mapped[str] = mapped_column(
+        ForeignKey("candidates.candidate_id"), index=True
+    )
     created_at: Mapped[datetime] = mapped_column(index=True)
     source: Mapped[str]
     match_score: Mapped[float] = mapped_column(index=True)
@@ -55,7 +57,9 @@ class LlmScore(Base):
     __table_args__ = (UniqueConstraint("application_id", "provider"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    application_id: Mapped[str] = mapped_column(ForeignKey("applications.application_id"))
+    application_id: Mapped[str] = mapped_column(
+        ForeignKey("applications.application_id")
+    )
     provider: Mapped[str]
     model: Mapped[str]
     score: Mapped[int]
