@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://hiring:hiring@localhost:5432/hiring_board"
     frontend_origin: str = "http://localhost:5173"
 
+    @property
+    def frontend_origins(self) -> list[str]:
+        return [origin.strip().rstrip("/") for origin in self.frontend_origin.split(",") if origin.strip()]
+
     # Scoring providers.
     anthropic_api_key: SecretStr = SecretStr("")
     claude_model: str = "claude-haiku-4-5"
