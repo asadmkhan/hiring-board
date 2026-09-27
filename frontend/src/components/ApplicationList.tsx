@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { getFilterOptions, listApplications, messageOf } from '../api'
 import { DEFAULT_FILTERS } from '../filters'
 import { formatDate } from '../format'
-import { bandLabel, countryLabel, STATUS_LABELS } from '../labels'
+import { bandLabel, countryLabel } from '../labels'
 import type { ApplicationFilters, ApplicationPage, FilterOptions } from '../types'
 import Filters from './Filters'
 import Pager from './Pager'
+import StatusBadge from './StatusBadge'
 
 interface ListState {
   page: ApplicationPage | null
@@ -95,7 +96,12 @@ export default function ApplicationList({ selectedId, refreshKey, onSelect }: Pr
 
   return (
     <>
-      <Filters filters={filters} options={options} onChange={changeFilters} />
+      <Filters
+        filters={filters}
+        options={options}
+        onChange={changeFilters}
+        onReset={() => changeFilters(DEFAULT_FILTERS)}
+      />
       {optionsError && (
         <p role="alert">
           Filter values could not be loaded. {optionsError} <button onClick={retry}>Try again</button>
@@ -148,7 +154,7 @@ function PageBody({ page, loading, selectedId, onPage, onSelect }: PageBodyProps
               <th>Job</th>
               <th>Family</th>
               <th>Country</th>
-              <th>Score</th>
+              <th className="num">Score</th>
               <th>Band</th>
               <th>Status</th>
               <th>Created</th>
@@ -171,10 +177,12 @@ function PageBody({ page, loading, selectedId, onPage, onSelect }: PageBodyProps
                 <td>{item.job.title}</td>
                 <td>{item.job.job_family}</td>
                 <td>{countryLabel(item.job.country)}</td>
-                <td>{item.match_score}</td>
+                <td className="num">{item.match_score.toFixed(2)}</td>
                 <td>{bandLabel(item.match_band)}</td>
-                <td>{STATUS_LABELS[item.status]}</td>
-                <td>{formatDate(item.created_at)}</td>
+                <td>
+                  <StatusBadge status={item.status} />
+                </td>
+                <td className="nowrap">{formatDate(item.created_at)}</td>
               </tr>
             ))}
           </tbody>

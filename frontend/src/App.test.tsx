@@ -10,6 +10,8 @@ vi.mock('./api', async (importOriginal) => ({
   getFilterOptions: vi.fn(),
   getApplication: vi.fn(),
   updateApplication: vi.fn(),
+  getLlmProviders: vi.fn().mockResolvedValue([{ id: 'mock', label: 'Mock (no model call)', model: 'mock-rules-v1' }]),
+  scoreApplication: vi.fn(),
 }))
 
 const detail: ApplicationDetail = {

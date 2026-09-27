@@ -72,3 +72,13 @@ export interface ApplicationUpdate {
   status?: ApplicationStatus
   note?: string | null
 }
+
+export interface LlmProvider {
+  id: string
+  label: string
+  model: string
+}
+
+export interface LlmScoreResponse extends ApplicationLlmScore {
+  cached: boolean
+}

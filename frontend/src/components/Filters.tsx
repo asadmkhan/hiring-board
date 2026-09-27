@@ -6,9 +6,10 @@ interface Props {
   filters: ApplicationFilters
   options: FilterOptions | null
   onChange: (change: Partial<ApplicationFilters>) => void
+  onReset: () => void
 }
 
-export default function Filters({ filters, options, onChange }: Props) {
+export default function Filters({ filters, options, onChange, onReset }: Props) {
   return (
     <div className="filters">
       <label>
@@ -57,6 +58,9 @@ export default function Filters({ filters, options, onChange }: Props) {
           ))}
         </select>
       </label>
+      <button type="button" onClick={onReset}>
+        Reset
+      </button>
     </div>
   )
 }

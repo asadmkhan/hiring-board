@@ -2,8 +2,11 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { getApplication, messageOf, updateApplication } from '../api'
 import { STATUSES } from '../filters'
 import { formatDate } from '../format'
-import { bandLabel, countryLabel, providerLabel, seniorityLabel, sourceLabel, STATUS_LABELS } from '../labels'
+import { countryLabel, seniorityLabel, sourceLabel, STATUS_LABELS } from '../labels'
 import type { ApplicationDetail as Detail, ApplicationStatus, ApplicationUpdate } from '../types'
+import AiScore from './AiScore'
+import Field from './Field'
+import StatusBadge from './StatusBadge'
 
 interface Props {
   id: string
@@ -130,8 +133,7 @@ export default function ApplicationDetail({ id, onChanged, onClose }: Props) {
       <Field label="Id" value={detail.application_id} />
       <Field label="Created" value={formatDate(detail.created_at)} />
       <Field label="Source" value={sourceLabel(detail.source)} />
-      <Field label="Match score" value={`${detail.match_score} (${bandLabel(detail.match_band)})`} />
-      <Field label="Status" value={STATUS_LABELS[detail.status]} />
+      <Field label="Status" value={<StatusBadge status={detail.status} />} />
       <Field label="Status changed" value={detail.status_updated_at ? formatDate(detail.status_updated_at) : 'never'} />
 
       <h3>Candidate</h3>
@@ -146,18 +148,14 @@ export default function ApplicationDetail({ id, onChanged, onClose }: Props) {
       <Field label="Location" value={`${job.city} (${countryLabel(job.country)})`} />
       <Field label="Posted" value={formatDate(job.created_at)} />
 
-      <h3>AI scores</h3>
-      {detail.llm_scores.length === 0 ? (
-        <p>No AI score yet.</p>
-      ) : (
-        <ul>
-          {detail.llm_scores.map((score) => (
-            <li key={score.provider}>
-              {providerLabel(score.provider)}: {score.score} / 100. {score.reason} ({formatDate(score.scored_at)})
-            </li>
-          ))}
-        </ul>
-      )}
+      <h3>Scores</h3>
+      <AiScore
+        key={detail.application_id}
+        applicationId={detail.application_id}
+        matchScore={detail.match_score}
+        matchBand={detail.match_band}
+        storedScores={detail.llm_scores}
+      />
 
       <form onSubmit={save} aria-label="Change status">
         <label>
@@ -185,24 +183,15 @@ export default function ApplicationDetail({ id, onChanged, onClose }: Props) {
           />
         </label>
         <div>
-          <button type="submit" aria-disabled={!dirty || saving}>
+          <button type="submit" className="primary" aria-disabled={!dirty || saving}>
             {saving ? 'Saving...' : 'Save'}
           </button>
         </div>
         {saveError && <p role="alert">{saveError}</p>}
-        <p role="status" tabIndex={-1} ref={saveStatusRef}>
+        <p role="status" className={saved ? 'ok' : undefined} tabIndex={-1} ref={saveStatusRef}>
           {saved ? 'Saved.' : ''}
         </p>
       </form>
     </aside>
-  )
-}
-
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="field">
-      <span>{label}</span>
-      {value}
-    </div>
   )
 }

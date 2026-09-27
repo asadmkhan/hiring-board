@@ -84,6 +84,7 @@ it('shows one row per application', async () => {
   expect(screen.getByText('Warehouse Associate')).toBeInTheDocument()
   expect(screen.getByText('2026-03-01 09:00')).toBeInTheDocument()
   expect(screen.getByRole('cell', { name: 'Germany' })).toBeInTheDocument()
+  expect(screen.getByRole('cell', { name: '0.50' })).toBeInTheDocument()
   expect(screen.getByRole('cell', { name: 'New' })).toBeInTheDocument()
   expect(screen.getByText('Page 1 of 1, 1 application')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
@@ -251,4 +252,22 @@ it('reloads with the same filters and page when asked from outside', async () =>
   expect(mockedList).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'hired', page: 2 }))
   expect(screen.getByRole('status')).toHaveTextContent('Loading applications...')
   expect(await screen.findByText('Page 2 of 3, 50 applications')).toBeInTheDocument()
+})
+
+it('resets the filters to the defaults', async () => {
+  answerWith(50)
+  renderList()
+  await screen.findByText('Anna Adler')
+  fireEvent.change(screen.getByLabelText('Country'), { target: { value: 'AT' } })
+  fireEvent.change(screen.getByLabelText('Job family'), { target: { value: 'Logistics' } })
+  await screen.findByText('Page 1 of 3, 50 applications')
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+  await screen.findByText('Page 2 of 3, 50 applications')
+
+  fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
+
+  expect(mockedList).toHaveBeenLastCalledWith(
+    expect.objectContaining({ country: '', job_family: '', status: '', sort: 'newest', page: 1 }),
+  )
+  expect(await screen.findByLabelText('Country')).toHaveValue('')
 })

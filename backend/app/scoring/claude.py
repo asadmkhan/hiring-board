@@ -9,7 +9,7 @@ from app.scoring.prompt import SYSTEM_PROMPT, build_prompt
 
 class ClaudeAnswer(BaseModel):
     score: int = Field(description="Fit score from 0 to 100.")
-    reason: str = Field(description="One sentence explaining the score.")
+    reason: str = Field(description="One short plain sentence a recruiter would say out loud. No dashes.")
 
 
 class ClaudeScorer:

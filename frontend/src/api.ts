@@ -4,6 +4,8 @@ import type {
   ApplicationPage,
   ApplicationUpdate,
   FilterOptions,
+  LlmProvider,
+  LlmScoreResponse,
   SortKey,
 } from './types'
 
@@ -86,5 +88,17 @@ export function updateApplication(id: string, changes: ApplicationUpdate): Promi
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(changes),
+  })
+}
+
+export function getLlmProviders(): Promise<LlmProvider[]> {
+  return request('/llm-providers')
+}
+
+export function scoreApplication(id: string, provider: string): Promise<LlmScoreResponse> {
+  return request(`/applications/${encodeURIComponent(id)}/llm-score`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ provider }),
   })
 }

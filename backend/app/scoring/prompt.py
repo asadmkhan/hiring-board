@@ -2,7 +2,10 @@ from app.models import Candidate, Job
 
 SYSTEM_PROMPT = (
     "You score how well a candidate fits a job for a staffing agency. Be strict and concise. "
-    "Give a score from 0 to 100 and a one-sentence reason."
+    "Give a score from 0 to 100 and a one-sentence reason. "
+    "Write the reason the way a recruiter would say it to a colleague: one short, plain sentence "
+    "in everyday words, at most 25 words. No dashes, no semicolons, no lists of factors, "
+    "no words like significant, substantial, misaligned or leverage."
 )
 
 

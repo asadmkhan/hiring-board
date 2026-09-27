@@ -8,6 +8,8 @@ vi.mock('../api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../api')>()),
   getApplication: vi.fn(),
   updateApplication: vi.fn(),
+  getLlmProviders: vi.fn().mockResolvedValue([{ id: 'mock', label: 'Mock (no model call)', model: 'mock-rules-v1' }]),
+  scoreApplication: vi.fn(),
 }))
 const mockedGet = vi.mocked(getApplication)
 const mockedUpdate = vi.mocked(updateApplication)
@@ -73,7 +75,7 @@ it('shows the application, candidate and job', async () => {
   expect(mockedGet).toHaveBeenCalledWith('A1')
   expect(screen.getByText('anna@example.com')).toBeInTheDocument()
   expect(screen.getByText('Warehouse Associate')).toBeInTheDocument()
-  expect(screen.getByText('0.5 (Medium)')).toBeInTheDocument()
+  expect(screen.getByText('0.50 (Medium)')).toBeInTheDocument()
   expect(screen.getByText('Logistics, Junior')).toBeInTheDocument()
   expect(screen.getByText('Job board')).toBeInTheDocument()
   expect(screen.getByText('never')).toBeInTheDocument()
@@ -115,7 +117,7 @@ it('saves only the changed fields and shows what came back', async () => {
 
   expect(mockedUpdate).toHaveBeenCalledWith('A1', { status: 'shortlisted' })
   expect(await screen.findByText('Saved.')).toBeInTheDocument()
-  expect(screen.getByText('Shortlisted', { selector: 'div' })).toBeInTheDocument()
+  expect(screen.getByText('Shortlisted', { selector: '.badge' })).toBeInTheDocument()
   expect(screen.getByText('2026-09-27 10:00')).toBeInTheDocument()
   expect(onChanged).toHaveBeenCalledTimes(1)
   expect(screen.getByRole('button', { name: 'Save' })).toHaveAttribute('aria-disabled', 'true')
