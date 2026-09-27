@@ -1,15 +1,10 @@
 import anthropic
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import ValidationError
 
 from app.models import Candidate, Job
 from app.schemas import LlmProviderId
-from app.scoring.base import ScoreResult, ScoringError
+from app.scoring.base import ModelAnswer, ScoreResult, ScoringError, result_from
 from app.scoring.prompt import SYSTEM_PROMPT, build_prompt
-
-
-class ClaudeAnswer(BaseModel):
-    score: int = Field(description="Fit score from 0 to 100.")
-    reason: str = Field(description="One short plain sentence a recruiter would say out loud. No dashes.")
 
 
 class ClaudeScorer:
@@ -31,7 +26,7 @@ class ClaudeScorer:
                 max_tokens=256,
                 system=SYSTEM_PROMPT,
                 messages=[{"role": "user", "content": build_prompt(job, candidate)}],
-                output_format=ClaudeAnswer,
+                output_format=ModelAnswer,
             )
         except anthropic.AuthenticationError as e:
             raise ScoringError("Claude rejected the API key.") from e
@@ -42,7 +37,4 @@ class ClaudeScorer:
         except (anthropic.AnthropicError, ValidationError) as e:
             raise ScoringError("Claude returned an invalid answer.") from e
 
-        answer = response.parsed_output
-        if answer is None or not 0 <= answer.score <= 100 or not answer.reason.strip():
-            raise ScoringError("Claude returned an invalid answer.")
-        return ScoreResult(score=answer.score, reason=answer.reason.strip())
+        return result_from(response.parsed_output, "Claude")

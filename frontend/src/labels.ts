@@ -51,6 +51,8 @@ export function seniorityLabel(code: string): string {
 const PROVIDER_LABELS: Record<string, string> = {
   mock: 'Mock',
   claude: 'Claude',
+  openai: 'OpenAI',
+  ollama: 'Ollama',
 }
 
 export function providerLabel(code: string): string {

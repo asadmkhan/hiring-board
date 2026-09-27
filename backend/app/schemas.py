@@ -42,6 +42,8 @@ class ApplicationFilters(BaseModel):
 class LlmProviderId(StrEnum):
     MOCK = "mock"
     CLAUDE = "claude"
+    OPENAI = "openai"
+    OLLAMA = "ollama"
 
 
 class LlmProvider(BaseModel):

@@ -14,7 +14,9 @@ class Settings(BaseSettings):
     anthropic_api_key: SecretStr = SecretStr("")
     claude_model: str = "claude-haiku-4-5"
     openai_api_key: SecretStr = SecretStr("")
-    ollama_url: str = "http://localhost:11434"
+    openai_model: str = "gpt-6-luna"
+    ollama_url: str = ""
+    ollama_model: str = "llama3.2:3b"
 
     model_config = SettingsConfigDict(env_file=BACKEND_DIR / ".env", extra="ignore")
 
