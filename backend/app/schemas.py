@@ -21,12 +21,22 @@ class ApplicationFilters(BaseModel):
     job_family: str | None = Field(
         None, description="Job family, for example Logistics."
     )
+    q: str | None = Field(
+        None, max_length=100, description="Text to find in the candidate name or the job title."
+    )
     sort: Literal["created_at", "match_score"] = Field(
         "created_at", description="Sort field."
     )
     order: Literal["asc", "desc"] = Field("desc", description="Sort direction.")
     page: int = Field(1, ge=1, description="Page number, starts at 1.")
     page_size: int = Field(20, ge=1, le=100, description="Rows per page, max 100.")
+
+    @field_validator("q", mode="before")
+    @classmethod
+    def blank_search_means_no_search(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip() or None
+        return value
 
 
 class LlmProviderId(StrEnum):

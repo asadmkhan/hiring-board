@@ -46,6 +46,7 @@ export interface ApplicationFilters {
   status: ApplicationStatus | ''
   country: string
   job_family: string
+  q: string
   sort: SortKey
   page: number
 }

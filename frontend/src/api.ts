@@ -72,6 +72,7 @@ export function listApplications(filters: ApplicationFilters): Promise<Applicati
   if (filters.status) params.set('status', filters.status)
   if (filters.country) params.set('country', filters.country)
   if (filters.job_family) params.set('job_family', filters.job_family)
+  if (filters.q) params.set('q', filters.q)
   return request(`/applications?${params}`)
 }
 

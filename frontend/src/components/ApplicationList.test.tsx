@@ -267,7 +267,67 @@ it('resets the filters to the defaults', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
 
   expect(mockedList).toHaveBeenLastCalledWith(
-    expect.objectContaining({ country: '', job_family: '', status: '', sort: 'newest', page: 1 }),
+    expect.objectContaining({ country: '', job_family: '', q: '', status: '', sort: 'newest', page: 1 }),
   )
   expect(await screen.findByLabelText('Country')).toHaveValue('')
+})
+
+it('applies the search on submit and resets to page 1', async () => {
+  answerWith(50)
+  renderList()
+  await screen.findByText('Anna Adler')
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+  await screen.findByText('Page 2 of 3, 50 applications')
+
+  fireEvent.change(screen.getByLabelText('Search'), { target: { value: '  nurse ' } })
+  expect(mockedList).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 }))
+  fireEvent.submit(screen.getByRole('search'))
+
+  expect(mockedList).toHaveBeenLastCalledWith(expect.objectContaining({ q: 'nurse', page: 1 }))
+
+  fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
+  expect(await screen.findByLabelText('Search')).toHaveValue('')
+})
+
+it('search button submits and blank text means no search', async () => {
+  answerWith(50)
+  renderList()
+  await screen.findByText('Anna Adler')
+
+  fireEvent.change(screen.getByLabelText('Search'), { target: { value: 'care' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Search' }))
+  expect(mockedList).toHaveBeenLastCalledWith(expect.objectContaining({ q: 'care' }))
+
+  fireEvent.change(screen.getByLabelText('Search'), { target: { value: '   ' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Search' }))
+  expect(mockedList).toHaveBeenLastCalledWith(expect.objectContaining({ q: '' }))
+  expect(screen.getByLabelText('Search')).toHaveValue('')
+})
+
+it('clears the search when the box is emptied and on reset with unsent text', async () => {
+  answerWith(50)
+  renderList()
+  await screen.findByText('Anna Adler')
+  fireEvent.change(screen.getByLabelText('Search'), { target: { value: 'care' } })
+  fireEvent.submit(screen.getByRole('search'))
+  expect(mockedList).toHaveBeenLastCalledWith(expect.objectContaining({ q: 'care' }))
+
+  fireEvent.change(screen.getByLabelText('Search'), { target: { value: '' } })
+  expect(mockedList).toHaveBeenLastCalledWith(expect.objectContaining({ q: '' }))
+
+  fireEvent.change(screen.getByLabelText('Search'), { target: { value: 'typed' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Reset' }))
+  expect(screen.getByLabelText('Search')).toHaveValue('')
+  expect(mockedList).toHaveBeenLastCalledWith(expect.objectContaining({ q: '' }))
+})
+
+it('applies the typed search when another filter changes', async () => {
+  answerWith(50)
+  renderList()
+  await screen.findByText('Anna Adler')
+
+  fireEvent.change(screen.getByLabelText('Search'), { target: { value: 'care' } })
+  fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'hired' } })
+
+  expect(mockedList).toHaveBeenLastCalledWith(expect.objectContaining({ q: 'care', status: 'hired', page: 1 }))
 })

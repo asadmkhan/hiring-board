@@ -124,3 +124,36 @@ def test_total_counts_all_matches_not_just_the_page(client):
 )
 def test_bad_values_are_rejected(client, params):
     assert client.get("/applications", params=params).status_code == 422
+
+
+@pytest.mark.parametrize(
+    ("q", "expected"),
+    [
+        ("anna", ["A8", "A3", "A1"]),
+        ("NURSE", ["A6", "A5"]),
+        ("ben", ["A5", "A2"]),
+        ("  Cara  ", ["A7", "A6", "A4"]),
+        ("zzz", []),
+        ("%", []),
+        ("_", []),
+        ("\\", []),
+        ("", ["A8", "A7", "A6", "A5", "A4", "A3", "A2", "A1"]),
+    ],
+)
+def test_search_matches_candidate_name_or_job_title(client, q, expected):
+    response = client.get("/applications", params={"q": q})
+
+    assert response.status_code == 200
+    assert ids(response) == expected
+    assert response.json()["total"] == len(expected)
+
+
+def test_search_combines_with_filters(client):
+    response = client.get("/applications", params={"q": "warehouse", "status": "new"})
+
+    assert ids(response) == ["A8", "A7", "A1"]
+
+
+def test_search_longer_than_100_chars_is_rejected(client):
+    assert client.get("/applications", params={"q": "x" * 101}).status_code == 422
+    assert client.get("/applications", params={"q": " " * 20 + "x" * 100}).status_code == 200

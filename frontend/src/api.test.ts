@@ -30,7 +30,14 @@ it('sends only the sort and paging params when no filter is set', async () => {
 it('encodes the filters and maps the sort key', async () => {
   const fetchMock = stubFetch()
 
-  await listApplications({ status: 'new', country: 'AT', job_family: 'Office & Admin', sort: 'highest_score', page: 3 })
+  await listApplications({
+    status: 'new',
+    country: 'AT',
+    job_family: 'Office & Admin',
+    q: 'Mia B',
+    sort: 'highest_score',
+    page: 3,
+  })
 
   const url = new URL(fetchMock.mock.calls[0][0])
   expect(url.search).toContain('job_family=Office+%26+Admin')
@@ -38,6 +45,7 @@ it('encodes the filters and maps the sort key', async () => {
     status: 'new',
     country: 'AT',
     job_family: 'Office & Admin',
+    q: 'Mia B',
     sort: 'match_score',
     order: 'desc',
     page: '3',

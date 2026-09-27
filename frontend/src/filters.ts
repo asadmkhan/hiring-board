@@ -5,6 +5,7 @@ export const DEFAULT_FILTERS: ApplicationFilters = {
   status: '',
   country: '',
   job_family: '',
+  q: '',
   sort: 'newest',
   page: 1,
 }

@@ -92,12 +92,14 @@ h3 {
 /* Controls */
 
 button,
+input,
 select,
 textarea {
   font: inherit;
   color: inherit;
 }
 
+input,
 select,
 textarea {
   border: 1px solid #cbd2d9;
@@ -106,6 +108,7 @@ textarea {
   background: #fff;
 }
 
+input:focus,
 select:focus,
 textarea:focus,
 button:focus-visible {
@@ -167,10 +170,21 @@ button.link {
   color: var(--muted);
 }
 
-.filters select {
+.filters select,
+.filters input {
   min-width: 140px;
   font-size: 14px;
   color: var(--text);
+}
+
+.filters input {
+  min-width: 220px;
+}
+
+.filters .search {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
 }
 
 /* Table */

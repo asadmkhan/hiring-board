@@ -1,9 +1,9 @@
 from collections.abc import Sequence
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, contains_eager, joinedload, selectinload
 
-from app.models import Application, Job, LlmScore
+from app.models import Application, Candidate, Job, LlmScore
 from app.schemas import ApplicationFilters
 
 SORT_COLUMNS = {
@@ -22,6 +22,14 @@ def list_applications(
         stmt = stmt.where(Job.country == filters.country)
     if filters.job_family:
         stmt = stmt.where(Job.job_family == filters.job_family)
+    if filters.q:
+        pattern = f"%{escape_like(filters.q)}%"
+        stmt = stmt.where(
+            or_(
+                Candidate.full_name.ilike(pattern, escape=LIKE_ESCAPE),
+                Job.title.ilike(pattern, escape=LIKE_ESCAPE),
+            )
+        )
 
     total = session.scalar(select(func.count()).select_from(stmt.subquery()))
 
@@ -39,6 +47,14 @@ def list_applications(
         .limit(filters.page_size)
     )
     return list(session.scalars(stmt)), total
+
+
+LIKE_ESCAPE = "\\"
+
+
+def escape_like(text: str) -> str:
+    """Make %, _ and backslash in the search text match themselves."""
+    return text.replace("\\", "\\\\").replace("%", r"\%").replace("_", r"\_")
 
 
 def get_application(session: Session, application_id: str) -> Application | None:
