@@ -54,3 +54,21 @@ export interface FilterOptions {
   countries: string[]
   job_families: string[]
 }
+
+export interface ApplicationLlmScore {
+  provider: string
+  model: string
+  score: number
+  reason: string
+  scored_at: string
+}
+
+export interface ApplicationDetail extends ApplicationListItem {
+  note: string | null
+  llm_scores: ApplicationLlmScore[]
+}
+
+export interface ApplicationUpdate {
+  status?: ApplicationStatus
+  note?: string | null
+}

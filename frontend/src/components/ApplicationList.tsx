@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { getFilterOptions, listApplications } from '../api'
+import { getFilterOptions, listApplications, messageOf } from '../api'
 import { DEFAULT_FILTERS } from '../filters'
 import { formatDate } from '../format'
 import { bandLabel, countryLabel, STATUS_LABELS } from '../labels'
@@ -13,17 +13,35 @@ interface ListState {
   error: string | null
 }
 
-function messageOf(error: unknown): string {
-  return error instanceof Error ? error.message : 'Something went wrong.'
+interface Props {
+  selectedId: string | null
+  refreshKey: number
+  onSelect: (id: string) => void
 }
 
-export default function ApplicationList() {
+export default function ApplicationList({ selectedId, refreshKey, onSelect }: Props) {
   const [filters, setFilters] = useState<ApplicationFilters>(DEFAULT_FILTERS)
   const [list, setList] = useState<ListState>({ page: null, loading: true, error: null })
   const [attempt, setAttempt] = useState(0)
   const [options, setOptions] = useState<FilterOptions | null>(null)
   const [optionsError, setOptionsError] = useState<string | null>(null)
   const statusRef = useRef<HTMLParagraphElement>(null)
+  const lastSelected = useRef<string | null>(null)
+
+  // A refresh from outside (a save in the panel) must show as loading like any other fetch.
+  const [seenRefreshKey, setSeenRefreshKey] = useState(refreshKey)
+  if (refreshKey !== seenRefreshKey) {
+    setSeenRefreshKey(refreshKey)
+    setList((current) => ({ ...current, loading: true }))
+  }
+
+  useEffect(() => {
+    // When the panel closes, put focus back on the row that opened it.
+    if (selectedId === null && lastSelected.current) {
+      document.querySelector<HTMLButtonElement>(`button[data-id="${lastSelected.current}"]`)?.focus()
+    }
+    lastSelected.current = selectedId
+  }, [selectedId])
 
   useEffect(() => {
     if (options) return
@@ -53,7 +71,7 @@ export default function ApplicationList() {
     return () => {
       stale = true
     }
-  }, [filters, attempt])
+  }, [filters, attempt, refreshKey])
 
   const startLoading = () => setList((current) => ({ ...current, loading: true, error: null }))
 
@@ -93,7 +111,13 @@ export default function ApplicationList() {
       </p>
       {list.page && (
         <div aria-busy={list.loading}>
-          <PageBody page={list.page} loading={list.loading} onPage={changePage} />
+          <PageBody
+            page={list.page}
+            loading={list.loading}
+            selectedId={selectedId}
+            onPage={changePage}
+            onSelect={onSelect}
+          />
         </div>
       )}
     </>
@@ -103,10 +127,12 @@ export default function ApplicationList() {
 interface PageBodyProps {
   page: ApplicationPage
   loading: boolean
+  selectedId: string | null
   onPage: (page: number) => void
+  onSelect: (id: string) => void
 }
 
-function PageBody({ page, loading, onPage }: PageBodyProps) {
+function PageBody({ page, loading, selectedId, onPage, onSelect }: PageBodyProps) {
   if (page.total === 0) {
     return <p>No applications found.</p>
   }
@@ -130,8 +156,18 @@ function PageBody({ page, loading, onPage }: PageBodyProps) {
           </thead>
           <tbody>
             {page.items.map((item) => (
-              <tr key={item.application_id}>
-                <td>{item.candidate.full_name}</td>
+              <tr key={item.application_id} className={item.application_id === selectedId ? 'selected' : undefined}>
+                <td>
+                  <button
+                    type="button"
+                    className="link"
+                    data-id={item.application_id}
+                    aria-current={item.application_id === selectedId ? 'true' : undefined}
+                    onClick={() => onSelect(item.application_id)}
+                  >
+                    {item.candidate.full_name}
+                  </button>
+                </td>
                 <td>{item.job.title}</td>
                 <td>{item.job.job_family}</td>
                 <td>{countryLabel(item.job.country)}</td>

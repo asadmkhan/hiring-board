@@ -1,4 +1,11 @@
-import type { ApplicationFilters, ApplicationPage, FilterOptions, SortKey } from './types'
+import type {
+  ApplicationDetail,
+  ApplicationFilters,
+  ApplicationPage,
+  ApplicationUpdate,
+  FilterOptions,
+  SortKey,
+} from './types'
 
 const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000').replace(/\/$/, '')
 
@@ -10,6 +17,10 @@ export class ApiError extends Error {
     this.name = 'ApiError'
     this.status = status
   }
+}
+
+export function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : 'Something went wrong.'
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -64,4 +75,16 @@ export function listApplications(filters: ApplicationFilters): Promise<Applicati
 
 export function getFilterOptions(): Promise<FilterOptions> {
   return request('/filter-options')
+}
+
+export function getApplication(id: string): Promise<ApplicationDetail> {
+  return request(`/applications/${encodeURIComponent(id)}`)
+}
+
+export function updateApplication(id: string, changes: ApplicationUpdate): Promise<ApplicationDetail> {
+  return request(`/applications/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(changes),
+  })
 }

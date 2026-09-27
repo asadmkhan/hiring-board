@@ -6,7 +6,7 @@ body {
 }
 
 main {
-  max-width: 1100px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 16px;
 }
@@ -45,4 +45,88 @@ button {
   display: flex;
   gap: 4px;
   align-items: center;
+}
+
+.layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.layout > section {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.detail {
+  flex: 0 0 400px;
+  border: 1px solid #ddd;
+  padding: 12px 16px;
+}
+
+.detail header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail h2,
+.detail h3 {
+  margin: 8px 0;
+}
+
+.field {
+  margin: 2px 0;
+}
+
+.field span {
+  display: inline-block;
+  width: 120px;
+  color: #666;
+}
+
+.detail form {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.detail form label {
+  display: grid;
+  gap: 4px;
+}
+
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #1a4fd8;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+tr.selected td {
+  background: #eef3ff;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    flex-direction: column;
+  }
+
+  .detail {
+    flex: none;
+    width: auto;
+  }
+}
+
+tr.selected td:first-child {
+  border-left: 3px solid #1a4fd8;
+  font-weight: 600;
+}
+
+button[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: default;
 }
